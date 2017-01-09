@@ -1,0 +1,2 @@
+This plugin uses event listeners to comment a jira issue when a user updates the priority to Blocker. 
+It then notifies the user via email to change the added comment.
