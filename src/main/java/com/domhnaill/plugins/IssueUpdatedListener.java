@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.swing.event.ChangeListener;
 
 import com.atlassian.jira.component.*;
+import com.atlassian.jira.config.properties.ApplicationProperties;
 import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
@@ -15,8 +16,12 @@ import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
+import com.atlassian.jira.mail.Email;
 import com.atlassian.jira.security.JiraAuthenticationContext;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.mail.MailException;
+import com.atlassian.mail.MailFactory;
+import com.atlassian.mail.server.SMTPMailServer;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.workflow.util.IsUserOwnerCondition;
 
@@ -79,9 +84,12 @@ public class IssueUpdatedListener implements InitializingBean, DisposableBean {
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
-        Long eventTypeId = issueEvent.getEventTypeId();
+
+    	ApplicationProperties ap = ComponentAccessor.getApplicationProperties();
+    	Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
         String author = issueEvent.getUser().getName();
+        String emailAddress = issueEvent.getUser().getEmailAddress();
  
         // if it's an event we're interested in, log it
         if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID) & issue.getPriorityObject().getName().equals("Blocker")) {
@@ -90,7 +98,19 @@ public class IssueUpdatedListener implements InitializingBean, DisposableBean {
         	
         	try {
         		GenericValue changeLog = issueEvent.getChangeLog();
-        		changeItems = changeLog.internalDelegator.findByAnd("ChangeItem", EasyMap.build("group",changeLog.get("id")));        		
+        		changeItems = changeLog.internalDelegator.findByAnd("ChangeItem", EasyMap.build("group",changeLog.get("id")));
+        		SMTPMailServer mailServer = MailFactory.getServerManager().getDefaultSMTPMailServer();
+        		
+        		Email email = new Email(emailAddress);
+        		email.setMimeType("text/html");
+        		email.setEncoding("utf-8");
+        		email.setBody("Priority Updated on " + issue.getKey() + ", Please Edit Comment.");
+        		try {
+					mailServer.send(email);
+				} catch (MailException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
         	} catch (GenericEntityException e){
         		System.out.println(e.getMessage());
         	}
