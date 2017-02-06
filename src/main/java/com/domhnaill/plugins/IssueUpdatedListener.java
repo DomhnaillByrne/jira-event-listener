@@ -93,7 +93,8 @@ public class IssueUpdatedListener implements InitializingBean, DisposableBean {
         String emailAddress = issueEvent.getUser().getEmailAddress();
  
         // if it's an event we're interested in, log it
-        if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID) & issue.getPriorityObject().getName().equals("Blocker")) {
+        try{
+        if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID) && issue.getPriorityObject().getName().equals("Blocker")) {
             //log.info("Issue {} has priority of {}.", issue.getKey(), issue.getPriorityObject().getName());
         	List<GenericValue> changeItems = null;
         	
@@ -105,7 +106,7 @@ public class IssueUpdatedListener implements InitializingBean, DisposableBean {
         		System.out.println(e.getMessage());
         	}
         	
-        	log.info("number of changes: {}",changeItems.size());
+        	//log.info("number of changes: {}",changeItems.size());
         	
         	// Check if the priority field was changed and trigger action for that.
         	for (int i = 0; i < changeItems.size(); i++ ){
@@ -132,10 +133,14 @@ public class IssueUpdatedListener implements InitializingBean, DisposableBean {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-        			log.info("Priority was changed!!!!");
+        			log.info("Priority was changed");
         			log.info("Item is : {}", item);
         		}
         	}
-        } 
+        }
+        }catch (Exception e){
+        	//log.info("Priority did not exist for the issue!");
+        }
+        }
     }
-}
+
